@@ -2,7 +2,7 @@
 
 ![Screenshot](https://i.imgur.com/ZwqYXP1.png)
 
-A simple tray icon program for integrating a UNIX system running on VirtualBox into the Windows desktop:
+A simple tray icon program for integrating a UNIX system running on VirtualBox or Hyper-V into the Windows desktop:
 
 - at launch, starts [VcXsrv](https://sourceforge.net/projects/vcxsrv/) (at exit, quits it)
 - on left click, starts your VM if it's not started
@@ -10,7 +10,7 @@ A simple tray icon program for integrating a UNIX system running on VirtualBox i
 
 ## Usage
 
-You'll need VcXsrv, VirtualBox, and PuTTY. Generate a private key with PuTTY, save it without encrypting with a password.
+You'll need VcXsrv, VirtualBox or Hyper-V, and PuTTY. Generate a private key with PuTTY, save it without encrypting with a password.
 
 First, install the module:
 
@@ -25,7 +25,8 @@ Then write a script like this:
 Import-Module XVMMgr
 
 XVMMgr @{
-    VMName = 'TheVMNameInVirtualBox';
+    VMName = 'YOUR VM NAME';
+    # Hypervisor = 'Hyper-V'; # Just ignore the field for VirtualBox
     SSHHost = 'user@vmhostname-or-ip.lan';
     SSHPrivateKey = 'C:\Users\user\path\to\unencryptedPrivateKeyForVM.ppk'; # No spaces in the path!
     Commands = @(

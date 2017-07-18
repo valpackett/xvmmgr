@@ -8,21 +8,33 @@ function RunPlink ([object]$Config, [string]$cmd) {
 function XVMMgr ([object]$Config, [string]$SSHHost, [string]$SSHPrivateKeyPath, [array]$Commands) {
     Stop-Process -ProcessName VcXsrv -ErrorAction SilentlyContinue
 
-    $VBox = New-Object -ComObject VirtualBox.VirtualBox
-    $VBoxSession = New-Object -ComObject VirtualBox.Session
-    $VBoxBox = $VBox.FindMachine($Config.VMName)
-
     $Ctx = New-Object System.Windows.Forms.ApplicationContext
     $Processes = New-Object System.Collections.Generic.List[System.Object]
     $Processes.Add((Start-Process 'C:\Program Files\VcXsrv\vcxsrv.exe' -ArgumentList '-multiwindow','-wgl','-notrayicon','-xkboptions','compose:ralt' -PassThru))
 
     $NotifyIcon = New-Object System.Windows.Forms.NotifyIcon
     $NotifyIcon.Visible = $True
-    $NotifyIcon.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon('C:\Program Files\Oracle\VirtualBox\VirtualBox.exe')
+    if ($Config.Hypervisor -eq 'Hyper-V') {
+        $NotifyIcon.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon([System.Environment]::ExpandEnvironmentVariables('%ProgramFiles%\Hyper-V\SnapInAbout.dll'))
+    } else {
+        $NotifyIcon.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon([System.Environment]::ExpandEnvironmentVariables('%ProgramFiles%\Oracle\VirtualBox\VirtualBox.exe'))
+    }
     $NotifyIcon.ContextMenu = New-Object System.Windows.Forms.ContextMenu
     $NotifyIcon.add_Click({
-        if ($_.Button -eq [System.Windows.Forms.MouseButtons]::Left -and $VBoxBox.State -lt 5) {
-            $VBoxBox.LaunchVMProcess($VBoxSession, 'headless', '')
+        if ($_.Button -eq [System.Windows.Forms.MouseButtons]::Left) {
+            if ($Config.Hypervisor -eq 'Hyper-V') {
+                Start-VM -Name $Config.VMName -AsJob
+            } else {
+                $VBox = New-Object -ComObject VirtualBox.VirtualBox
+                $VBoxSession = New-Object -ComObject VirtualBox.Session
+                $VBoxBox = $VBox.FindMachine($Config.VMName)
+                if ($VBoxBox.State -lt 5) {
+                    $VBoxBox.LaunchVMProcess($VBoxSession, 'headless', '')
+                }
+                [System.Runtime.Interopservices.Marshal]::ReleaseComObject($VBoxBox)
+                [System.Runtime.Interopservices.Marshal]::ReleaseComObject($VBoxSession)
+                [System.Runtime.Interopservices.Marshal]::ReleaseComObject($VBox)
+            }
         }
     })
 
